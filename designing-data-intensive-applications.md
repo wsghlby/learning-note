@@ -9,7 +9,7 @@ Functionality data-intensive applications commonly need:
 - stream processing: send a message to another process, to be handled asynchronously
 - batch processing: periodically crunch a large amount of accumulated data
 
-This chapter is about exploring ways of thinking about reliability, scalability, and maintainability
+This chapter is about exploring ways of thinking about reliability, scalability, and maintainability.
 
 ## Reliability
 
@@ -43,11 +43,11 @@ Some small things can help: carefully thinking about assumptions and interaction
 ### Human errors
 
 Humans are known to be unreliable. Approaches that make our systems reliable, in spite of unreliable humans:
-- Design systems in a way that minimizes opportunities for error. (e.g. well-designed API)
-- Decouple the places where people make the most mistakes from the places where they can cause failures. (e.g. sandbox where people can explore and experiment safely, without affecting real users.)
+- Design systems in a way that minimizes opportunities for error. (e.g. well-designed API).
+- Decouple the places where people make the most mistakes from the places where they can cause failures (e.g. sandbox where people can explore and experiment safely, without affecting real users).
 - Allow quick and easy recovery from human errors, to minimize the impact in the case of a failure.
 - Set up detailed and clear monitoring which can show us early warning signals and allow us to check whether any assumptions or constraints are being violated.
-- Implement good management practices and training
+- Implement good management practices and training.
 - Test thoroughly at all levels, from unit tests to whole-system integration tests and manual tests.
 
 ## Scalability
@@ -56,12 +56,12 @@ Scalability is the term we use to describe a system’s ability to cope with inc
 
 ### How to describe system load
 
-Load can be described with a few numbers which we call load parameters. The best choice of parameters depends on the architecture of your system (e.g. request per second for web server, ratio of reads to writes for database; average case, extreme cases)
+Load can be described with a few numbers which we call load parameters. The best choice of parameters depends on the architecture of your system (e.g. request per second for web server, ratio of reads to writes for database; average case, extreme cases).
 
 #### Twitter example
 
 2 main operations:
-- Post tweet  to this user's followers (4.6k requests/sec on average, over 12k requests/sec at peak)
+- Post tweet  to this user's followers (4.6k requests/sec on average, over 12k requests/sec at peak).
 - Home timeline display tweets posted by people this user follow (300k requests/sec).
 
 2 ways of implementing these operations:
@@ -138,4 +138,4 @@ The ease with which you can modify a data system, and adapt it to changing requi
 
 # Chapter 2
 
-Various techniques, architectures, and algorithms that are used in order to achieve reliability, scalability, and maintainability
+Various techniques, architectures, and algorithms that are used in order to achieve reliability, scalability, and maintainability。
