@@ -1,3 +1,16 @@
+# Designing Data-Intensive Applications
+
+[Chapter 1 Reliable, Scalable, and Maintainable Applications](#chapter-1-reliable-scalable-and-maintainable-application)
+- [Reliability](#reliability)
+- [Scalability](#scalability)
+- [Maintainability](#maintainability)
+
+[Chapter 2 Data Models and Query Languages](#chapter-2-data-models-and-query-languages)
+- [Relational Model Versus Document Model](#relational-model-versus-document-model)
+- [Query language](#query-language)
+- [Graph-like data models](#graph-like-data-models)
+
+
 # Chapter 1 Reliable, Scalable, and Maintainable Applications
 
 Data-intensive applications, as opposed to compute-intensive ones, worry more about data - the amount of data, the complexity of data, and the data changing speed.
