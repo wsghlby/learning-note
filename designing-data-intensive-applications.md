@@ -6,7 +6,7 @@
 - [Maintainability](#maintainability)
 
 [Chapter 2 Data Models and Query Languages](#chapter-2-data-models-and-query-languages)
-- [Relational Model Versus Document Model](#relational-model-versus-document-model)
+- [Relational model versus document model](#relational-model-versus-document-model)
 - [Query language](#query-language)
 - [Graph-like data models](#graph-like-data-models)
 
@@ -87,7 +87,7 @@ However, the downside of approach 2 is that posting a tweet now requires a lot o
 
 The final solution is a hybrid of both approaches. Most users’ tweets continue to be fanned out to home timelines at the time when they are posted. While tweets from any celebrities that a user may follow are fetched separately and merged with that user’s home timeline when it is read.
 
-### How to describe Performance
+### How to describe performance
 
 Once you have described the load on your system, you can investigate what happens when the load increases in two ways:
 - When you increase a load parameter and keep the system resources (CPU, memory, network bandwidth, etc.) unchanged, how is the performance of your system affected?
@@ -124,7 +124,7 @@ To design a software that minimize maintenance cost, we will pay particular atte
 - Simplicity: Make it easy for new engineers to understand the system.
 - Evolvability (also known as extensibility, modifiability, or plasticity): Make it easy for engineers to make changes to the system in the future. 
 
-### Operability: Making Life Easy for Operations
+### Operability: making life easy for operations
 
 Good operability means making routine tasks easy, allowing the operations team to focus their efforts on high-value activities. Data systems can do various things to make routine tasks easy, including:
 - Providing visibility into the runtime behavior and internals of the system, with good monitoring
@@ -135,7 +135,7 @@ Good operability means making routine tasks easy, allowing the operations team t
 - Self-healing where appropriate, but also giving administrators manual control over the system state when needed
 - Exhibiting predictable behavior, minimizing surprises
 
-### Simplicity: Managing Complexity
+### Simplicity: managing complexity
 
 Complexity makes maintenance hard. Also, when the system is harder for developers to understand and reason about, there is a greater risk of introducing bugs when making a change.
 
@@ -145,7 +145,7 @@ One of the best tools we have for removing accidental complexity is abstraction.
 
 Not only is this reuse more efficient than reimplementing a similar thing multiple times, but it also leads to higher-quality software, as quality improvements in the abstracted component benefit all applications that use it.
 
-### Evolvability: Making Change Easy
+### Evolvability: making change easy
 
 The ease with which you can modify a data system, and adapt it to changing requirements, is closely linked to its simplicity and its abstractions: simple and easy-to understand systems are usually easier to modify than complex ones.
 
@@ -153,7 +153,7 @@ The ease with which you can modify a data system, and adapt it to changing requi
 
 Most applications are built by layering one data model on top of another. Each layer hides the complexity of the layers below it by providing a clean data model. There are many different kinds of data models, and every data model embodies assumptions about how it is going to be used.
 
-## Relational Model Versus Document Model
+## Relational model versus document model
 
 The best-known data model today is SQL, based on the relational model proposed: data is organized into relations (called tables in SQL), where each relation is an unordered collection of tuples (rows in SQL).
 
@@ -174,7 +174,7 @@ Impedance mismatch: if data is stored in relational tables, an awkward translati
 
  The JSON representation has better *locality* than the multi-table schema because the JSON representation, all the relevant information is in one place, and one query is sufficient. The one-to-many relationships imply a tree structure in the data, and the JSON representation makes this tree structure explicit. 
 
-### Many-to-One and Many-to-Many Relationships
+### Many-to-one and many-to-many relationships
 
 Benefit of standardize database fields:
 - Consistent style and spelling
@@ -197,7 +197,7 @@ A query in CODASYL was performed by moving a cursor through the database by iter
 
 While in the relational model, the query optimizer automatically decides which parts of the query to execute in which order, and which indexes to use, so the application developers don't need to think about them. A key insight of the relational model was this: you only need to build a query optimizer once, and then all applications that use the database can benefit from it.
 
-### Relational Versus Document Databases Today
+### Relational versus document databases today
 
 #### Simpler application code
 
@@ -241,7 +241,7 @@ When we take parallel into consideration, imperative code is very hard to parall
 
 In a web browser, using declarative CSS styling is much better than manipulating styles imperatively in JavaScript.
 
-### MApReduce querying
+### MapReduce querying
 
 MapReduce is a programming model for processing large amounts of data in bulk across many machines. 
 
