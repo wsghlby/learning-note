@@ -313,7 +313,8 @@ CREATE
 (Lucy) -[:BORN_IN]-> (Idaho)
 
 MATCH 
-(person) -[:BORN_IN]-> () -[:WITHIN*0..]-> (us:Location {name:'United States'}), (person) -[:LIVES_IN]-> () -[:WITHIN*0..]-> (eu:Location {name:'Europe'}) 
+(person) -[:BORN_IN]-> () -[:WITHIN*0..]-> (us:Location {name:'United States'}), 
+(person) -[:LIVES_IN]-> () -[:WITHIN*0..]-> (eu:Location {name:'Europe'}) 
 RETURN person.name
 ```
 
