@@ -1054,3 +1054,141 @@ In this case, it's up to the client to merge concurrent values. A simple approac
 When we have multiple replica, we use a version number per replica as well as per key. Each replica increments its own version number when processing a write, and also keeps track of the version numbers it has seen from each of the other replicas.
 
 Version vectors: the collection of version numbers from all the replicas. Version vectors are sent from the database replicas to clients when values are read, and need to be sent back to the database when a value is subsequently written.
+
+# Partitioning
+
+Partition (aka. sharding): each piece of data (each record, row, or document) belongs to exactly one partition so that they could be distributed across many machines to achieve higher scalability. 
+
+For queries that operate on a single partition, each node can independently execute the queries for its own partition, so query throughput can be scaled by adding more nodes. Large, complex queries can potentially be parallelized across many nodes, although this gets significantly harder.
+
+## Partitioning and Replication
+
+Partitioning is usually combined with replication so that copies of each partition are stored on multiple nodes for fault tolerance.
+
+If a leader–follower replication model is used, each partition’s leader is assigned to one node, and its followers are assigned to other nodes. Each node may be the leader for some partitions and a follower for other partitions.
+
+## Partitioning of Key-Value Data
+
+Our goal with partitioning is to spread the data and the query load evenly across nodes. If the partitioning is unfair, we call it skewed. A partition with disproportionately high load is called a hot spot.
+
+The simplest approach for avoiding hot spots would be to assign records to nodes randomly, but it has a big disadvantage: when you’re trying to read a particular item, you have no way of knowing which node it is on, so you have to query all nodes in parallel.
+
+### Partitioning by Key Range
+
+One way of partitioning is to assign a continuous range of keys to each partition.
+
+The ranges of keys are not necessarily evenly spaced, because your data may not be evenly distributed. In order to distribute the data evenly, the partition boundaries need to adapt to the data. The partition boundaries might be chosen manually by an administrator, or the database can choose them automatically.
+
+Within each partition, we can keep keys in sorted order. This has the advantage that range scans are easy, and you can treat the key as a concatenated index in order to fetch several related records in one query.
+
+However, the downside of key range partitioning is that certain access patterns can lead to hot spots. (e.g. use timestamp as key, then all write go to one partition since they are all for today)
+
+### Partitioning by Hash of Key
+
+We could use a hash function to determine the partition for a given key. 
+
+A good hash function takes skewed data and makes it uniformly distributed. Even if the input strings are very similar, their hashes are evenly distributed across that range of numbers.
+
+Some simple built in hash function of programming language they may not be suitable for partitioning: for example, in Java’s Object.hashCode() and Ruby’s Object#hash, the same key may have a different hash value in different processes.
+
+Once you have a suitable hash function for keys, you can assign each partition a range of hashes (rather than a range of keys). This technique is good at distributing keys fairly among the partitions. However, we lose a nice property of key-range partitioning: the ability to do efficient range queries.
+
+With a compound primary key consisting of several columns, we could achieve a compromise between the two partitioning strategies. Only the first part of that key is hashed to determine the partition, but the other columns are used as a concatenated index for sorting the data. If it specifies a fixed value for the first column, it can perform an efficient range scan over the other columns of the key. (e.g. (user_id, update_timestamp) as key)
+
+### Skewed Workloads and Relieving Hot Spots
+
+Even will all the discussed strategies, in the extreme case where all reads and writes are for the same key, you still end up with all requests being routed to the same partition.
+
+Today, most data systems are not able to automatically compensate for such a highly skewed workload, so it’s the responsibility of the application to reduce the skew. (e.g. add a random number to the beginning or end of the key)
+
+However, having split the writes across different keys, any reads now have to do additional work, as they have to read the data from all keys (with different random pre/suffix) and combine it. This technique also requires additional bookkeeping: it only makes sense to append the random number for the small number of hot keys; for the vast majority of keys with low write throughput this would be unnecessary overhead. Thus, you also need some way of keeping track of which keys are being split.
+
+## Partitioning and Secondary Indexes
+
+A secondary index usually doesn’t identify a record uniquely but rather is a way of searching for occurrences of a particular value.
+
+### Partitioning Secondary Indexes by Document
+
+In this indexing approach, each partition is completely separate: each partition maintains its own secondary indexes, covering only the documents in that partition.
+
+Whenever you need to write to the database—to add, remove, or update a document—you only need to deal with the partition that contains the document ID that you are writing. For that reason, a document-partitioned index is also known as a local index (as opposed to a global index).
+
+This approach to querying a partitioned database is sometimes known as scatter/ gather since you need to send the query to all partitions and combine all the results you get back which can make read queries on secondary indexes quite expensive. Even if you query the partitions in parallel, scatter/gather is prone to tail latency amplification. 
+
+Nevertheless, it is widely used. Most database vendors recommend that you structure your partitioning scheme so that secondary index queries can be served from a single partition. 
+
+### Partitioning Secondary Indexes by Term
+
+Rather than each partition having its own secondary index (a local index), we can construct a global index that covers data in all partitions and. And a global index must also be partitioned, but it can be partitioned differently from the primary key index.
+
+We call this kind of index term-partitioned, because the term we’re looking for determines the partition of the index. As before, we can partition the index by the term itself, or using a hash of the term, and partitioning on a hash of the term gives a more even distribution of load.
+
+The advantage of a global (term-partitioned) index over a document-partitioned index is that it can make reads more efficient: rather than doing scatter/gather over all partitions, a client only needs to make a request to the partition containing the term that it wants. However, the downside of a global index is that writes are slower and more complicated, because a write to a single document may now affect multiple partitions of the index (every term in the document might be on a different partition, on a different node).
+
+In a term-partitioned index, that would require a distributed transaction across all partitions affected by a write, which is not supported in all databases. In practice, updates to global secondary indexes are often asynchronous.
+
+## Rebalancing Partitions
+
+Since change happens, like query throughput increases, dataset size increases, data and requests need to be moved from one node to another. The process of moving load from one node in the cluster to another is called rebalancing.
+
+Rebalancing is usually expected to meet some minimum requirements:
+- After rebalancing, the load (data storage, read and write requests) should be shared fairly between the nodes in the cluster.
+- While rebalancing is happening, the database should continue accepting reads and writes.
+- No more data than necessary should be moved between nodes, to make rebalancing fast and to minimize the network and disk I/O load.
+
+### Strategies for Rebalancing
+
+#### Doesn't work: hash mod N
+
+The problem with the mod N approach is that if the number of nodes N changes, most of the keys will need to be moved from one node to another.
+
+#### Fixed number of partitions
+
+Fixed number of partitions is to create many more partitions than there are nodes, and assign several partitions to each node. If a node is added to the cluster, the new node can steal a few partitions from every existing node until partitions are fairly distributed once again.
+
+Only entire partitions are moved between nodes. The number of partitions does not change, nor does the assignment of keys to partitions. The only thing that changes is the assignment of partitions to nodes.
+
+In this configuration, the number of partitions is usually fixed when the database is first set up and not changed afterward. Thus, the number of partitions configured at the outset is the maximum number of nodes you can have, so you need to choose it high enough to accommodate future growth. However, each partition also has management overhead, so it’s counterproductive to choose too high a number.
+
+Since each partition contains a fixed fraction of the total data, the size of each partition grows proportionally to the total amount of data in the cluster. If partitions are very large, rebalancing and recovery from node failures become expensive. But if partitions are too small, they incur too much overhead.
+
+#### Dynamic partitioning
+
+Dynamic partitioning is to create partitions dynamically. When a partition grows to exceed a configured size, it is split into two partitions. Conversely, if lots of data is deleted and a partition shrinks below some threshold, it can be merged with an adjacent partition.
+
+Each partition is assigned to one node, and each node can handle multiple partitions. After a large partition has been split, one of its two halves can be transferred to another node in order to balance the load.
+
+An advantage of dynamic partitioning is that the number of partitions adapts to the total data volume.
+
+While the dataset is small—until it hits the point at which the first partition is split—all writes have to be processed by a single node while the other nodes sit idle. So some database allow an initial set of partitions to be configured on an empty database (this is called pre-splitting). In the case of key-range partitioning, pre-splitting requires that you already know what the key distribution is going to look like.
+
+#### Partitioning proportionally to nodes
+
+A third option is to make the number of partitions proportional to the number of nodes—in other words, to have a fixed number of partitions per node. Since a larger data volume generally requires a larger number of nodes to store, this approach also keeps the size of each partition fairly stable.
+
+When a new node joins the cluster, it randomly chooses a fixed number of existing partitions to split, and then takes ownership of one half of each of those split partitions while leaving the other half of each partition in place. The randomization can produce unfair splits, but when averaged over a larger number of partitions, the new node ends up taking a fair share of the load from the existing nodes. Picking partition boundaries randomly requires that hash-based partitioning is used.
+
+## Operations: Automatic or Manual Rebalancing
+
+Fully automated rebalancing can be convenient. However, it can be unpredictable. Rebalancing is an expensive operation, because it requires rerouting requests and moving a large amount of data from one node to another. If it is not done carefully, this process can overload the network or the nodes and harm the performance of other requests while the rebalancing is in progress.
+
+Such automation can be dangerous in combination with automatic failure detection. For example, a node will be slow due to overloaded, then other nodes may think it's dead and automatically rebalance the cluster to move load away from it. This puts additional load on the overloaded node, other nodes, and the network—making the situation worse and potentially causing a cascading failure.
+
+For that reason, it can be a good thing to have a human in the loop for rebalancing. It’s slower than a fully automatic process, but it can help prevent operational surprises.
+
+## Request Routing
+
+Since data is distributed across many node, how does client know which node to connect to? Especially with rebalancing, the assignment of partitions to nodes changes.
+
+This is an instance of a more general problem called service discovery, which isn’t limited to just databases. Any piece of software that is accessible over a network has this problem, especially if it is aiming for high availability.
+
+Approaches to this problem:
+1. Allow clients to contact any node. That Node will forwards the request to the appropriate node if it can't handle directly, receives the reply, and passes the reply along to the client.
+2. Send all requests to a routing tier first, which determines the node that should handle each request and forwards it accordingly.
+3. Require that clients be aware of the partitioning and the assignment of partitions to nodes. Then, a client can connect directly to the appropriate node.
+
+Then, the key problem is how does the component making the routing decision learn about changes in the assignment of partitions to nodes?
+
+There are protocols for achieving consensus in a distributed system, but they are hard to implement correctly. Many distributed data systems rely on a separate coordination service such as ZooKeeper to keep track of this cluster metadata. Each node registers itself in ZooKeeper, and ZooKeeper maintains the authoritative mapping of partitions to nodes. Other actors can subscribe to this information in ZooKeeper. Whenever a partition changes ownership, or a node is added or removed, ZooKeeper notifies the routing tier so that it can keep its routing information up to date.
+
+Some database take a different approach: gossip protocol. Requests can be sent to any node, and that node forwards them to the appropriate node for the requested partition. This model puts more complexity in the database nodes but avoids the dependency on an external coordination service.
