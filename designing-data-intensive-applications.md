@@ -10,7 +10,7 @@
 - [Query language](#query-language)
 - [Graph-like data models](#graph-like-data-models)
 
-[Chapter　3 Storage and Retrieval](#chapter-3-storage-and-retrieval)
+[Chapter 3 Storage and Retrieval](#chapter-3-storage-and-retrieval)
 - [Data Structures That Power Your Database](#data-structures-that-power-yourd-atabase)
 - [Database for Data Analytics](#database-for-data-analytics)
 - [Column-Oriented Storage](#column-oriented-storage)
@@ -25,6 +25,19 @@
 - [Problems with Replication Lag](#problems-with-replication-lag)
 - [Multi-Leader Replication](#multi-leader-replication)
 - [Leaderless Replication](#leaderless-replication)
+
+[Chapter 6 Partitioning](#chapter-6-partitioning)
+- [Partitioning and Replication](#partitioning-and-replication)
+- [Partitioning of Key-Value Data](partitioning-of-key-value-data)
+- [Partitioning and Secondary Indexes](partitioning-and-secondary-indexes)
+- [Rebalancing Partitions](rebalancing-partitions)
+- [Request Routing](request-routing)
+
+<!-- []()
+- []()
+- []()
+- []()
+- []() -->
 
 # Chapter 1 Reliable, Scalable, and Maintainable Applications
 
@@ -1055,7 +1068,7 @@ When we have multiple replica, we use a version number per replica as well as pe
 
 Version vectors: the collection of version numbers from all the replicas. Version vectors are sent from the database replicas to clients when values are read, and need to be sent back to the database when a value is subsequently written.
 
-# Partitioning
+# Chapter 6 Partitioning
 
 Partition (aka. sharding): each piece of data (each record, row, or document) belongs to exactly one partition so that they could be distributed across many machines to achieve higher scalability. 
 
@@ -1168,7 +1181,7 @@ A third option is to make the number of partitions proportional to the number of
 
 When a new node joins the cluster, it randomly chooses a fixed number of existing partitions to split, and then takes ownership of one half of each of those split partitions while leaving the other half of each partition in place. The randomization can produce unfair splits, but when averaged over a larger number of partitions, the new node ends up taking a fair share of the load from the existing nodes. Picking partition boundaries randomly requires that hash-based partitioning is used.
 
-## Operations: Automatic or Manual Rebalancing
+### Operations: Automatic or Manual Rebalancing
 
 Fully automated rebalancing can be convenient. However, it can be unpredictable. Rebalancing is an expensive operation, because it requires rerouting requests and moving a large amount of data from one node to another. If it is not done carefully, this process can overload the network or the nodes and harm the performance of other requests while the rebalancing is in progress.
 
